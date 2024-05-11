@@ -65,12 +65,16 @@ impl WinitInputHelper {
 
     /// Call this function in `window_event` of ApplicationHandler.
     /// This function updates internal state, this will affect the result of accessor methods immediately.
-    pub fn window_event(&mut self, event: &WindowEvent) {
+    /// You can run your logics when this function returns true, which indicates a redraw is requested.
+    pub fn window_event(&mut self, event: &WindowEvent) -> bool {
         self.process_window_event(event);
             
         if event == &WindowEvent::RedrawRequested {
             self.end_step();
+            return true;
         }
+
+        return false;
     }
 
     /// Call this function in `device_event` of ApplicationHandler.

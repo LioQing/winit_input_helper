@@ -15,9 +15,10 @@ To see all available methods look at [docs.rs](https://docs.rs/winit_input_helpe
 
 ```rust
 use winit::application::ApplicationHandler;
-use winit::event_loop::EventLoop;
+use winit::event::{DeviceEvent, DeviceId, StartCause, WindowEvent};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::KeyCode;
-use winit::window::Window;
+use winit::window::{Window, WindowId};
 use winit_input_helper::WinitInputHelper;
 
 struct State {
@@ -35,51 +36,55 @@ impl State {
 }
 
 impl ApplicationHandler for State {
-    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         self.window = Some(event_loop.create_window(Window::default_attributes()).unwrap());
+
+        // Set control flow to poll so that it does not wait.
+        // If you want the program to only run when events are received,
+        // you should not use the return value of `window_event`,
+        // instead directly run logics after `window_event` method.
+        event_loop.set_control_flow(ControlFlow::Poll);
     }
 
-    fn new_events(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop, _cause: winit::event::StartCause) {
+    fn new_events(&mut self, _event_loop: &ActiveEventLoop, _cause: StartCause) {
         self.input.new_events();
     }
 
     fn window_event(
         &mut self,
-        _event_loop: &winit::event_loop::ActiveEventLoop,
-        _window_id: winit::window::WindowId,
-        event: winit::event::WindowEvent,
+        event_loop: &ActiveEventLoop,
+        _window_id: WindowId,
+        event: WindowEvent,
     ) {
-        self.input.window_event(&event);
+        if self.input.window_event(&event) {
+            if self.input.key_released(KeyCode::KeyQ) || self.input.close_requested() || self.input.destroyed()
+            {
+                println!("The application was requsted to close or the 'Q' key was pressed, quiting the application");
+                event_loop.exit();
+                return;
+            }
+
+            if self.input.key_pressed(KeyCode::KeyW) {
+                println!("The 'W' key (US layout) was pressed on the keyboard");
+            }
+
+
+            // You are expected to control your own timing within this block.
+            // Usually via rendering with vsync.
+            // render();
+
+            std::thread::sleep(std::time::Duration::from_millis(16));
+            self.window.as_mut().unwrap().request_redraw();
+        }
     }
 
     fn device_event(
         &mut self,
-        _event_loop: &winit::event_loop::ActiveEventLoop,
-        _device_id: winit::event::DeviceId,
-        event: winit::event::DeviceEvent,
+        _event_loop: &ActiveEventLoop,
+        _device_id: DeviceId,
+        event: DeviceEvent,
     ) {
         self.input.device_event(&event);
-    }
-
-    fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        if self.input.key_released(KeyCode::KeyQ) || self.input.close_requested() || self.input.destroyed()
-        {
-            println!("The application was requsted to close or the 'Q' key was pressed, quiting the application");
-            event_loop.exit();
-            return;
-        }
-
-        if self.input.key_pressed(KeyCode::KeyW) {
-            println!("The 'W' key (US layout) was pressed on the keyboard");
-        }
-
-
-        // You are expected to control your own timing within this block.
-        // Usually via rendering with vsync.
-        // Alternatively, you can put your logic in the `window_event` method to run on events only.
-        // render();
-
-        self.window.as_mut().unwrap().request_redraw();
     }
 }
 
