@@ -1,5 +1,5 @@
 use winit::dpi::PhysicalSize;
-use winit::event::{DeviceEvent, Event, MouseButton, WindowEvent};
+use winit::event::{DeviceEvent, MouseButton, WindowEvent};
 use winit::keyboard::{Key, KeyCode, PhysicalKey};
 
 use crate::current_input::{
@@ -56,33 +56,27 @@ impl WinitInputHelper {
         }
     }
 
-    /// Pass every winit event to this function and run your application logic when it returns true.
-    ///
-    /// The following winit events are handled:
-    /// *   `Event::NewEvents` clears all internal state.
-    /// *   `Event::MainEventsCleared` causes this function to return true, signifying a "step" has completed.
-    /// *   `Event::WindowEvent` updates internal state, this will affect the result of accessor methods immediately.
-    /// *   `Event::DeviceEvent` updates value of `mouse_diff()`
-    pub fn update<T>(&mut self, event: &Event<T>) -> bool {
-        match &event {
-            Event::NewEvents(_) => {
-                self.step();
-                false
-            }
-            Event::WindowEvent { event, .. } => {
-                self.process_window_event(event);
-                false
-            }
-            Event::DeviceEvent { event, .. } => {
-                self.process_device_event(event);
-                false
-            }
-            Event::AboutToWait => {
-                self.end_step();
-                true
-            }
-            _ => false,
+
+    /// Call this function in `new_events` of ApplicationHandler.
+    /// This function clears all internal state.
+    pub fn new_events(&mut self) {
+        self.step();
+    }
+
+    /// Call this function in `window_event` of ApplicationHandler.
+    /// This function updates internal state, this will affect the result of accessor methods immediately.
+    pub fn window_event(&mut self, event: &WindowEvent) {
+        self.process_window_event(event);
+            
+        if event == &WindowEvent::RedrawRequested {
+            self.end_step();
         }
+    }
+
+    /// Call this function in `device_event` of ApplicationHandler.
+    /// This function updates value of `mouse_diff()`
+    pub fn device_event(&mut self, event: &DeviceEvent) {
+        self.process_device_event(event);
     }
 
     /// Pass a slice containing every winit event that occured within the step to this function.
