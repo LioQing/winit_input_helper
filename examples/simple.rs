@@ -42,7 +42,8 @@ impl ApplicationHandler for State {
         _window_id: WindowId,
         event: WindowEvent,
     ) {
-        if self.input.window_event(&event) {
+        self.input.window_event(&event);
+        if let WindowEvent::RedrawRequested = event {
             if self.input.key_released(KeyCode::KeyQ) || self.input.close_requested() || self.input.destroyed()
             {
                 println!("The application was requsted to close or the 'Q' key was pressed, quiting the application");
@@ -61,6 +62,8 @@ impl ApplicationHandler for State {
 
             std::thread::sleep(std::time::Duration::from_millis(16));
             self.window.as_mut().unwrap().request_redraw();
+
+            self.input.end_step();
         }
     }
 

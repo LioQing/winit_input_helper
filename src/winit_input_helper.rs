@@ -65,16 +65,8 @@ impl WinitInputHelper {
 
     /// Call this function in `window_event` of ApplicationHandler.
     /// This function updates internal state, this will affect the result of accessor methods immediately.
-    /// You can run your logics when this function returns true, which indicates a redraw is requested.
-    pub fn window_event(&mut self, event: &WindowEvent) -> bool {
+    pub fn window_event(&mut self, event: &WindowEvent) {
         self.process_window_event(event);
-            
-        if event == &WindowEvent::RedrawRequested {
-            self.end_step();
-            return true;
-        }
-
-        return false;
     }
 
     /// Call this function in `device_event` of ApplicationHandler.
@@ -144,7 +136,8 @@ impl WinitInputHelper {
         }
     }
 
-    fn end_step(&mut self) {
+    /// Calling this function will end the current step.
+    pub fn end_step(&mut self) {
         self.step_duration = self.step_start.map(|start| start.elapsed());
         self.step_start = Some(Instant::now());
     }
